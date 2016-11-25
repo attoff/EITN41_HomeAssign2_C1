@@ -151,17 +151,12 @@ public class DisclosureAttack {
         }
         if (track == 1) {
             for (int i = 0; i < R[0].length; i++) {
-
-                /*
-                TODO!
-                Transfer the common numbers '1's only, not entire matrix!
-                 */
-                R[which][i] = vector[i];
+                if (R[which][i] == 1 && vector[i] != 1) {
+                    R[which][i] = 0;
+                }
             }
-
             return true;
         }
-
         return false;
     }
 }
