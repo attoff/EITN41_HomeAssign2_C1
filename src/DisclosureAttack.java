@@ -1,71 +1,61 @@
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.stream.IntStream;
 
-/**
- * Created by vikto on 2016-11-24.
- */
 public class DisclosureAttack {
     private ArrayList<String> partners;
+    private Random rand;
     private int communicationPartners;
     private int totalUsers;
     private int nbrSenders;
     private int[][] R;
+    private int[][] Rreturn;
 
 
     public DisclosureAttack(int nbrSenders, int communicationPartners, int totalUsers) {
+        this.nbrSenders = nbrSenders;
         this.communicationPartners = communicationPartners;
         this.totalUsers = totalUsers;
-        this.nbrSenders = nbrSenders;
         partners = new ArrayList<>();
         R = new int[communicationPartners][totalUsers];
-        fillRecievers();
-        sendMessageAndFillR();
+        Rreturn = new int[communicationPartners][totalUsers];
+        rand = new Random();
 
-        int numberOfSets = 0;
-        boolean disjoint = false;
-        boolean nondisjoint = false;
-        while (numberOfSets < communicationPartners) {
-            int[] newR = generateR();
-            int save = Integer.MIN_VALUE;
-            for (int i = 0; i < R.length; i++) {
-                if (checkIfDisjoin(newR, R[i])) {
-                    disjoint = true;
-                    break;
+        fillRecievers(); //Add what recievers every sender usually communicates with.
+        catchMatrices();
+        System.out.println("left catchMatrices");
+
+        boolean oneInEach = false;
+        int nbrOfFoundR = 0;
+        int[] newR = new int[totalUsers];
+        while (!oneInEach) {
+            newR = generateNewR();
+            if (checkRequirements(newR)) {
+                for (int i = 0; i < newR.length; i++) {
+                    Rreturn[nbrOfFoundR][i] = newR[i];
+                }
+                System.out.println("");
+                if (IntStream.of(Rreturn[nbrOfFoundR]).sum() == 1) {
+                    System.out.println("Sum is one in nbrR " + nbrOfFoundR);
+                    nbrOfFoundR++;
+                }
+                if (nbrOfFoundR == communicationPartners) {
+                    oneInEach = true;
                 }
             }
-            for (int i = 0; i < R.length; i++) {
-                if (!checkIfDisjoin(newR, R[i])) {
-                    nondisjoint = true;
-                    save = i;
-                    break;
-                }
-            }
-
-            int amountOfItems = 0;
-            if (disjoint && nondisjoint) {
-                for (int i = 0; i < R[0].length; i++) {
-                    amountOfItems = 0;
-                    if (R[save][i] == 1 && newR[i] != 1) {
-                        R[save][i] = 0;
-                    }
-                    if (R[save][i] == 1 && newR[i] == 1) {
-                        amountOfItems++;
-                    }
-                }
-            }
-            if (amountOfItems == 1) {
-                numberOfSets++;
-            }
-
         }
+
+        System.out.println(recieveCommPartners());
+
 
     }
 
-    public String recieveCommPartners() {
+
+    private String recieveCommPartners() {
         String partners = "";
         for (int j = 0; j < communicationPartners; j++) {
             for (int i = 0; i < totalUsers; i++) {
-                if (R[j][i] == 1) {
+                if (Rreturn[j][i] == 1) {
                     partners = partners + Integer.toString(i) + ";";
                 }
             }
@@ -73,24 +63,9 @@ public class DisclosureAttack {
         return partners;
     }
 
-    private int[] generateR() {
-        int[] R = new int[totalUsers];
-        Random rand = new Random();
-        for (int j = 0; j < nbrSenders; j++) {
-            String recieve = partners.get(j);
-            int temp = rand.nextInt(communicationPartners);
-            String[] tmp = recieve.split(";");
-            recieve = tmp[temp];
-            R[Integer.valueOf(recieve)] = 1;
-        }
-        return R;
-
-    }
-
     private void fillRecievers() {
-        Random rand = new Random();
         for (int i = 0; i < nbrSenders; i++) {
-            String recievers = new String();
+            String recievers = "";
             int temp;
             for (int j = 0; j < communicationPartners; j++) {
                 temp = rand.nextInt(totalUsers);
@@ -102,36 +77,37 @@ public class DisclosureAttack {
             }
             partners.add(recievers);
         }
+        for (String e : partners)
+            System.out.println("Recievers " + e);
     }
 
 
-    private void sendMessageAndFillR() {
-        Random rand = new Random();
-        int temp;
-        boolean goForward = false;
-
-        for (int i = 0; i < communicationPartners; i++) {
-            int[] vector = new int[totalUsers];
-
-            while (!goForward) {
-                vector = new int[totalUsers];
-                for (int j = 0; j < nbrSenders; j++) {
-                    String recieve = partners.get(j);
-                    temp = rand.nextInt(communicationPartners);
-                    String[] tmp = recieve.split(";");
-                    recieve = tmp[temp];
-                    vector[Integer.valueOf(recieve)] = 1;
-                }
-                if (checkIfDisjoint(vector)) {
-                    goForward = true;
-                    System.out.println("BAM!");
-                }
+    private void catchMatrices() {
+        int[] testVector;
+        int nbrOfR = 0;
+        while (nbrOfR < communicationPartners) {              //until 5 disjointed matrixes are found.
+            testVector = new int[totalUsers];
+            for (int j = 0; j < nbrSenders; j++) {      //one sender from each user
+                String recieve = partners.get(j);
+                int temp = rand.nextInt(communicationPartners);
+                String[] tmp = recieve.split(";");
+                recieve = tmp[temp];
+                testVector[Integer.valueOf(recieve)] = 1;   //set 'have recieved'
             }
-            R[i] = vector;
-            goForward = false;
+            for (int e : testVector) {
+                System.out.print(e);
+            }
+            System.out.println("");
+            if (checkIfDisjoint(testVector)) { //check if testvector is disjoint with rest
+                for (int i = 0; i < testVector.length; i++) {
+                    R[nbrOfR][i] = testVector[i];         //transfer testvector to the main matrix.
+                }
+                nbrOfR++;
+                System.out.println("Disjoint R found " + nbrOfR);
+            }
         }
-    }
 
+    }
 
     private boolean checkIfDisjoint(int[] recievers) {
         for (int j = 0; j < communicationPartners; j++) {
@@ -145,7 +121,8 @@ public class DisclosureAttack {
         return true;
     }
 
-    private boolean checkIfDisjoin(int[] firstR, int[] secondR) {
+
+    private boolean checkIfDisjoint(int[] firstR, int[] secondR) {
         for (int i = 0; i < firstR.length; i++) {
             if (firstR[i] == 1 && secondR[i] == 1) {
                 return false;
@@ -154,4 +131,36 @@ public class DisclosureAttack {
         return true;
     }
 
+
+    private int[] generateNewR() {
+        int[] returnVector = new int[totalUsers];
+        String recieve;
+
+        for (int j = 0; j < nbrSenders; j++) {
+            recieve = partners.get(j);
+            int temp = rand.nextInt(communicationPartners);
+            String[] tmp = recieve.split(";");
+            recieve = tmp[temp];
+            returnVector[Integer.valueOf(recieve)] = 1;   //set 'sent'
+        }
+
+        return returnVector;
+    }
+
+
+    private boolean checkRequirements(int[] vector) {
+        int track = 0;
+
+        for (int i = 0; i < communicationPartners; i++) {
+            if (!checkIfDisjoint(vector, R[i])) {
+                track++;
+            }
+        }
+
+        if (track == 1) {
+            return true;
+        }
+
+        return false;
+    }
 }
