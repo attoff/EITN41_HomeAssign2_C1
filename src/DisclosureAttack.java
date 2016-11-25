@@ -55,7 +55,7 @@ public class DisclosureAttack {
         String partners = "";
         for (int j = 0; j < communicationPartners; j++) {
             for (int i = 0; i < totalUsers; i++) {
-                if (Rreturn[j][i] == 1) {
+                if (R[j][i] == 1) {
                     partners = partners + Integer.toString(i) + ";";
                 }
             }
@@ -93,8 +93,11 @@ public class DisclosureAttack {
                 testVector[Integer.valueOf(recieve)] = 1;   //set 'have recieved'
             }
             if (checkIfDisjoint(testVector)) { //check if testvector is disjoint with re
-                nbrOfR++;
+                for (int i = 0; i < R[0].length; i++) {
+                    R[nbrOfR][i] = testVector[i];
+                }
                 System.out.println("Disjoint R found " + nbrOfR);
+                nbrOfR++;
             }
         }
         System.out.println("Leaving?");
@@ -106,7 +109,6 @@ public class DisclosureAttack {
                 if (recievers[i] == 1 && R[j][i] == 1) {
                     return false;
                 }
-
             }
         }
         return true;
@@ -134,7 +136,6 @@ public class DisclosureAttack {
             recieve = tmp[temp];
             returnVector[Integer.valueOf(recieve)] = 1;   //set 'sent'
         }
-
         return returnVector;
     }
 
