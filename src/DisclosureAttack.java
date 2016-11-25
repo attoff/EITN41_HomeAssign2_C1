@@ -26,21 +26,21 @@ public class DisclosureAttack {
         System.out.println("left catchMatrices");
 
         boolean oneInEach = false;
-        int nbrOfFoundR = 0;
-        int[] newR = new int[totalUsers];
+        int nbrOfFoundR;
+        int[] newR;
         while (!oneInEach) {
             newR = generateNewR();
             if (checkRequirements(newR)) {
-                for (int i = 0; i < newR.length; i++) {
-                    Rreturn[nbrOfFoundR][i] = newR[i];
-                }
-                System.out.println("");
-                if (IntStream.of(Rreturn[nbrOfFoundR]).sum() == 1) {
-                    System.out.println("Sum is one in nbrR " + nbrOfFoundR);
-                    nbrOfFoundR++;
-                }
-                if (nbrOfFoundR == communicationPartners) {
-                    oneInEach = true;
+                System.out.println("checkrequirements was true ");
+                for (int i = 0; i < communicationPartners; i++) {
+                    nbrOfFoundR = 0;
+                    if (IntStream.of(R[i]).sum() == 1) {
+                        System.out.println("Sum is one in nbrR " + nbrOfFoundR);
+                        nbrOfFoundR++;
+                    }
+                    if (nbrOfFoundR == communicationPartners) {
+                        oneInEach = true;
+                    }
                 }
             }
         }
@@ -77,8 +77,6 @@ public class DisclosureAttack {
             }
             partners.add(recievers);
         }
-        for (String e : partners)
-            System.out.println("Recievers " + e);
     }
 
 
@@ -94,19 +92,12 @@ public class DisclosureAttack {
                 recieve = tmp[temp];
                 testVector[Integer.valueOf(recieve)] = 1;   //set 'have recieved'
             }
-            for (int e : testVector) {
-                System.out.print(e);
-            }
-            System.out.println("");
-            if (checkIfDisjoint(testVector)) { //check if testvector is disjoint with rest
-                for (int i = 0; i < testVector.length; i++) {
-                    R[nbrOfR][i] = testVector[i];         //transfer testvector to the main matrix.
-                }
+            if (checkIfDisjoint(testVector)) { //check if testvector is disjoint with re
                 nbrOfR++;
                 System.out.println("Disjoint R found " + nbrOfR);
             }
         }
-
+        System.out.println("Leaving?");
     }
 
     private boolean checkIfDisjoint(int[] recievers) {
@@ -150,14 +141,24 @@ public class DisclosureAttack {
 
     private boolean checkRequirements(int[] vector) {
         int track = 0;
+        int which = 0;
 
         for (int i = 0; i < communicationPartners; i++) {
             if (!checkIfDisjoint(vector, R[i])) {
                 track++;
+                which = i;
             }
         }
-
         if (track == 1) {
+            for (int i = 0; i < R[0].length; i++) {
+
+                /*
+                TODO!
+                Transfer the common numbers '1's only, not entire matrix!
+                 */
+                R[which][i] = vector[i];
+            }
+
             return true;
         }
 

@@ -6,6 +6,6 @@ import java.util.stream.IntStream;
 public class Main {
 
     public static void main(String[] args) {
-        DisclosureAttack da = new DisclosureAttack(5, 10, 20);
+        DisclosureAttack da = new DisclosureAttack(5, 5, 50);
     }
 }
