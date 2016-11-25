@@ -3,25 +3,22 @@ import java.util.Random;
 import java.util.stream.IntStream;
 
 public class DisclosureAttack {
-    private ArrayList<String> partners;
+    private String partners;
     private Random rand;
     private int communicationPartners;
     private int totalUsers;
     private int nbrSenders;
     private int[][] R;
-    private int[][] Rreturn;
 
 
     public DisclosureAttack(int nbrSenders, int communicationPartners, int totalUsers) {
         this.nbrSenders = nbrSenders;
         this.communicationPartners = communicationPartners;
         this.totalUsers = totalUsers;
-        partners = new ArrayList<>();
         R = new int[communicationPartners][totalUsers];
-        Rreturn = new int[communicationPartners][totalUsers];
         rand = new Random();
 
-        fillRecievers(); //Add what recievers every sender usually communicates with.
+        partners = fillAliceRecievers();
         catchMatrices();
         System.out.println("left catchMatrices");
 
@@ -31,11 +28,9 @@ public class DisclosureAttack {
         while (!oneInEach) {
             newR = generateNewR();
             if (checkRequirements(newR)) {
-                System.out.println("checkrequirements was true ");
+                nbrOfFoundR = 0;
                 for (int i = 0; i < communicationPartners; i++) {
-                    nbrOfFoundR = 0;
                     if (IntStream.of(R[i]).sum() == 1) {
-                        System.out.println("Sum is one in nbrR " + nbrOfFoundR);
                         nbrOfFoundR++;
                     }
                     if (nbrOfFoundR == communicationPartners) {
@@ -46,8 +41,6 @@ public class DisclosureAttack {
         }
 
         System.out.println(recieveCommPartners());
-
-
     }
 
 
@@ -63,36 +56,46 @@ public class DisclosureAttack {
         return partners;
     }
 
-    private void fillRecievers() {
-        for (int i = 0; i < nbrSenders; i++) {
-            String recievers = "";
-            int temp;
-            for (int j = 0; j < communicationPartners; j++) {
+    private String fillAliceRecievers() {
+        String recievers = "";
+        int temp;
+        for (int j = 0; j < communicationPartners; j++) {
+            temp = rand.nextInt(totalUsers);
+            while (recievers.contains(Integer.toString(temp))) {
                 temp = rand.nextInt(totalUsers);
-                while (recievers.contains(Integer.toString(temp)) || temp == i) {
-                    temp = rand.nextInt(totalUsers);
-                }
-
-                recievers = recievers + temp + ";";
             }
-            partners.add(recievers);
+
+            recievers = recievers + temp + ";";
         }
+        System.out.println("Alice is talking to " + recievers);
+        return recievers;
+
     }
 
 
     private void catchMatrices() {
         int[] testVector;
         int nbrOfR = 0;
-        while (nbrOfR < communicationPartners) {              //until 5 disjointed matrixes are found.
+        int temp;
+        while (nbrOfR < communicationPartners) {
+
             testVector = new int[totalUsers];
-            for (int j = 0; j < nbrSenders; j++) {      //one sender from each user
-                String recieve = partners.get(j);
-                int temp = rand.nextInt(communicationPartners);
-                String[] tmp = recieve.split(";");
-                recieve = tmp[temp];
-                testVector[Integer.valueOf(recieve)] = 1;   //set 'have recieved'
+            String recieve = partners;
+            temp = rand.nextInt(communicationPartners);
+            String[] tmp = recieve.split(";");
+            recieve = tmp[temp];
+            testVector[Integer.valueOf(recieve)] = 1;
+
+            for (int j = 1; j < nbrSenders; j++) {
+                temp = rand.nextInt(totalUsers);
+                while (temp == j) {
+                    temp = rand.nextInt(totalUsers);
+                }
+                testVector[temp] = 1;
             }
-            if (checkIfDisjoint(testVector)) { //check if testvector is disjoint with re
+
+
+            if (checkIfDisjoint(testVector)) {
                 for (int i = 0; i < R[0].length; i++) {
                     R[nbrOfR][i] = testVector[i];
                 }
@@ -129,13 +132,19 @@ public class DisclosureAttack {
         int[] returnVector = new int[totalUsers];
         String recieve;
 
-        for (int j = 0; j < nbrSenders; j++) {
-            recieve = partners.get(j);
-            int temp = rand.nextInt(communicationPartners);
-            String[] tmp = recieve.split(";");
-            recieve = tmp[temp];
-            returnVector[Integer.valueOf(recieve)] = 1;   //set 'sent'
+        recieve = partners;
+        int temp = rand.nextInt(communicationPartners);
+        String[] tmp = recieve.split(";");
+        recieve = tmp[temp];
+        returnVector[Integer.valueOf(recieve)] = 1;
+        for (int j = 1; j < nbrSenders; j++) {
+            temp = rand.nextInt(totalUsers);
+            while (temp == j) {
+                temp = rand.nextInt(totalUsers);
+            }
+            returnVector[temp] = 1;
         }
+
         return returnVector;
     }
 
